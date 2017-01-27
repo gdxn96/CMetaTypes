@@ -1,0 +1,607 @@
+#pragma once
+#include <type_traits>
+#include <string>
+#include <rapidjson\rapidjson.h>
+
+class Variable;
+class MetaType;
+
+// Takes a pointer and returns a pointer offset in bytes
+#define PTR_ADD( PTR, OFFSET ) \
+  ((void *)(((char *)(PTR)) + (OFFSET)))
+
+typedef std::string(*SerializeFn)(void*);
+typedef void(*DeSerializeFn)(void*, std::string, const MetaType*);
+
+#define DEFINE_META( T ) \
+  MetaCreator<std::remove_cv<T>::type> UNIQUE_NAME_GENERATOR( )( #T, sizeof( T ) ); \
+  std::remove_cv<T>::type *T::NullCast( void ) { return reinterpret_cast<std::remove_cv<T>::type *>(NULL); } \
+  void T::AddMember( std::string name, unsigned offset, MetaType *data ) { return MetaCreator<std::remove_cv<T>::type>::AddMember( name, offset, data ); } \
+  void MetaCreator<std::remove_cv<T>::type>::RegisterMetaType( void ) { T::RegisterMetaType( ); } \
+  void T::RegisterMetaType( void )
+
+// META_DATA
+// Purpose : This macro goes on the inside of a class within the public section. It declares
+//           a few member functions for use by the MetaType system to retrieve information about
+//           the class.
+#define META_DATA( T ) \
+  static void AddMember( std::string name, unsigned offset, MetaType *data ); \
+  static std::remove_cv<T>::type *NullCast( void ); \
+  static void RegisterMetaType( void )
+
+// Defines the RegisterMetaType for you
+#define DEFINE_META_PRIMITIVE( T ) \
+  MetaCreator<std::remove_cv<T>::type> UNIQUE_NAME_GENERATOR( )( #T, sizeof( T ) ); \
+  void MetaCreator<std::remove_cv<T>::type>::RegisterMetaType( void ) \
+  { \
+    MetaCreator<std::remove_cv<T>::type>::SetSerializeFn( MetaType::ToJson<std::remove_cv<T>::type> ); \
+	MetaCreator<std::remove_cv<T>::type>::SetDeSerializeFn( MetaType::FromJson<std::remove_cv<T>::type> ); \
+  }
+
+#define ADD_MEMBER( MEMBER ) \
+  AddMember( #MEMBER, (unsigned)(&(NullCast( )->MEMBER)), META( NullCast( )->MEMBER ))
+
+#define SET_SERIALIZE( FN ) \
+  MetaCreator<std::remove_cv<TYPE>::type>::SetSerializeFn( FN )
+
+
+#define PASTE_TOKENS( _, __ ) _##__
+#define NAME_GENERATOR_INTERNAL( _ ) PASTE_TOKENS( GENERATED_TOKEN_, _ )
+#define UNIQUE_NAME_GENERATOR( ) NAME_GENERATOR_INTERNAL( __COUNTER__ )
+
+//
+// META_TYPE
+// Purpose: Retrieves the proper MetaType instance of an object by type.
+//
+#define META_TYPE( T ) (MetaCreator<std::remove_cv<T>::type>::Get( ))
+
+//
+// META
+// Purpose: Retrieves the proper MetaType instance of an object by an object's type.
+//
+#define META( OBJECT ) (MetaCreator<std::remove_cv<decltype( OBJECT )>::type>::Get( ))
+
+//
+// META_STR
+// Purpose : Finds a MetaType instance by string name
+//
+#define META_STR( STRING ) (MetaManager::Get( STRING ))
+
+class MetaType;
+
+//
+// Member
+// Purpose: Stores information (name and offset of member) about a data member of a specific class. Multiple
+//          Member objects can be stored in MetaType objects within a std::vector.
+//
+class Member
+{
+public:
+	Member(std::string string, unsigned val, MetaType *meta);
+	~Member();
+
+	const std::string &Name(void) const; // Gettor for name
+	unsigned Offset(void) const; // Gettor for offset
+	const MetaType *Meta(void) const; // Gettor for data
+
+	Member *& Next(void);
+	Member *const& Next(void) const;
+
+private:
+	std::string name;
+	unsigned offset;
+	const MetaType *data;
+	Member *next;
+};
+
+// MetaType
+// Purpose: Object for holding various info about any C++ type for the MetaType reflection system.
+//
+class MetaType
+{
+public:
+	MetaType(std::string string = "", unsigned val = 0);
+	~MetaType();
+
+	void Init(std::string string, unsigned val);
+
+	const std::string& Name(void) const;
+	const std::string ToJson(Variable& var) const;
+	unsigned Size(void) const;
+	void AddMember(const Member *member);
+	bool HasMembers(void) const;
+
+	void Copy(void *data, const void *src) const;
+	void Delete(void *data) const;
+	void *NewCopy(const void *src) const;
+	void *New(void) const;
+
+	const Member *Members(void) const;
+	void PrintMembers(std::ostream& os) const;
+
+	void SetSerialize(SerializeFn fn = NULL);
+	void SetDeSerialize(DeSerializeFn fn = NULL);
+	std::string MetaType::Serialize(void* v, const MetaType * m=nullptr) const;
+
+#pragma region ToJson
+	template<typename T>
+	static std::string ToJson(void* v) { return "default"; };
+
+	static std::string ToJson(void* v, const MetaType* m);
+
+	template<>
+	static std::string ToJson<int>(void* val) {
+		static char buf[65];
+		sprintf_s(buf, "%d", *(int*)val);
+		return buf;
+	}
+
+	template<>
+	static std::string ToJson<bool>(void* val) {
+		bool boolean = *(bool*)val;
+		if (boolean)
+		{
+			return "true";
+		}
+		else
+		{
+			return "false";
+		}
+	}
+
+	template<>
+	static std::string ToJson<double>(void* val) {
+		static char buf[65];
+		sprintf_s(buf, "%d", *(double*)val);
+		return buf;
+	}
+
+	template<>
+	static std::string ToJson<float>(void* val) {
+		static char buf[65];
+		sprintf_s(buf, "%d", *(float*)val);
+		return buf;
+	}
+
+	template<>
+	static std::string ToJson<char*>(void* val) {
+		std::string result = "\"";
+		result += (*(char**)(val));
+		return result + "\"";
+	}
+
+	template<>
+	static std::string ToJson<const char*>(void* val) {
+		std::string result = "\"";
+		result += (*(char**)(val));
+		return result + "\"";
+	}
+
+	template<>
+	static std::string ToJson<std::string>(void* val) {
+		std::string result = "\"";
+		result += (*(std::string*)(val));
+		return result + "\"";
+	}
+#pragma endregion
+
+	
+#pragma region FromJson
+	template<typename T>
+	static void FromJson(void* v, std::string json, const MetaType* m) { std::cout << "DeSerialization not defined" << std::endl; };
+
+	template<>
+	static void FromJson<int>(void* v, std::string json, const MetaType* m)
+	{
+
+	}
+#pragma endregion
+
+	
+
+private:
+	SerializeFn serialize;
+	DeSerializeFn deserialize;
+	Member *m_members;
+	Member *m_lastMember;
+	std::string m_name;
+	unsigned m_size;
+};
+
+struct Variable
+{
+	Variable() :
+		address(NULL),
+		type(NULL)
+	{}
+
+	Variable(void *d, const MetaType *m) : address(d), type(m)
+	{
+
+	}
+
+	template<typename Var>
+	Variable(Var* var) :
+		address(var),
+		type(META_TYPE(Var))
+	{}
+
+	template <typename T>
+	void FromJson(std::string json)
+	{
+		type->FromJson<T>(address, json, type);
+	}
+
+	std::string ToJson()
+	{
+		return type->ToJson(*this);
+	}
+
+	template <typename T>
+	T& get()
+	{
+		return *reinterpret_cast<T *>(address);
+	}
+
+	void* getAddress()
+	{
+		return address;
+	}
+
+	Variable& operator=(const Variable& rhs)
+	{
+		if (this == &rhs)
+			return *this;
+
+		if (type)
+		{
+			if (type == rhs.type)
+				type->Copy(address, rhs.address);
+			else
+			{
+				assert(rhs.type); // Cannot make an instance of NULL meta!
+
+				type->Delete(address);
+				type = rhs.type;
+
+				// We require a new copy if meta does not match!
+				if (type)
+					address = type->NewCopy(&rhs.address);
+			}
+		}
+
+		return *this;
+	}
+
+	void*  address;
+	const MetaType* type;
+};
+
+template <typename Type>
+class MetaCreator
+{
+public:
+	MetaCreator(std::string name, unsigned size)
+	{
+		Init(name, size);
+	}
+
+	static void Init(std::string name, unsigned size)
+	{
+		Get()->Init(name, size);
+		RegisterMetaType();
+	}
+
+	static void AddMember(std::string memberName, unsigned memberOffset, MetaType *meta)
+	{
+		Get()->AddMember(new Member(memberName, memberOffset, meta));
+	}
+
+	static void SetSerializeFn(SerializeFn fn)
+	{
+		Get()->SetSerialize(fn);
+	}
+
+	static void SetDeSerializeFn(DeSerializeFn fn)
+	{
+		Get()->SetDeSerialize(fn);
+	}
+
+	static Type *NullCast(void)
+	{
+		return reinterpret_cast<Type *>(NULL);
+	}
+
+	static void RegisterMetaType(void);
+
+	// Ensure a single instance can exist for this class type
+	static MetaType *Get(void)
+	{
+		static MetaType instance;
+		return &instance;
+	}
+};
+
+
+//class Int : public MetaType
+//{
+//public:
+//	Int() : MetaType("int", sizeof(int)) {};
+//	virtual void FromString(std::string v, void* value) const override
+//	{
+//
+//	}
+//
+//	virtual std::string ToString(void* v) const override
+//	{
+//		static char buf[65];
+//		sprintf_s(buf, "%d", *(int*)v);
+//		return buf;
+//	}
+//
+//} IntMetaInstance;
+//
+//class CString : public MetaType
+//{
+//public:
+//	CString() : MetaType("string", sizeof(char*)) {};
+//
+//	virtual void FromString(std::string v, void* value) const override
+//	{
+//
+//	}
+//
+//	virtual std::string ToString(void* v) const override
+//	{
+//		std::string result = "\"";
+//		result += (*(char**)(v));
+//		return result + "\"";
+//	}
+//
+//} CStringMetaInstance;
+//
+//class Float : public MetaType
+//{
+//public:
+//	Float() : MetaType("float", sizeof(float)) {};
+//
+//	virtual void FromString(std::string s, void* value) const override
+//	{
+//
+//	}
+//
+//	virtual std::string ToString(void* v) const override
+//	{
+//		static char buf[65];
+//		sprintf_s(buf, "%d", *(float*)v);
+//		return buf;
+//	}
+//
+//} FloatMetaInstance;
+//
+//class Double : public MetaType
+//{
+//public:
+//	Double() : MetaType("double", sizeof(double)) {};
+//
+//	virtual void FromString(std::string s, void* value) const override
+//	{
+//
+//	}
+//
+//	virtual std::string ToString(void* v) const override
+//	{
+//		static char buf[65];
+//		sprintf_s(buf, "%d", *(double*)v);
+//		return buf;
+//	}
+//
+//} DoubleMetaInstance;
+
+
+//template<typename Type>
+//MetaType& GetMetaType(Type t) { return *MetaCreator<std::remove_cv<Type>::type>::Get(); };
+//
+//template<>
+//MetaType& GetMetaType<int>(int) { return IntMetaInstance; };
+//
+//template<>
+//MetaType& GetMetaType<float>(float) { return FloatMetaInstance; };
+//
+//template<>
+//MetaType& GetMetaType<const char*>(const char *) { return CStringMetaInstance; };
+
+
+const std::string MetaType::ToJson(Variable& var) const
+{
+	std::string result;
+	if (HasMembers())
+	{
+		result += "{\n";
+		const Member *mem = m_members;
+		while (mem)
+		{
+			void *offsetData = PTR_ADD(var.getAddress(), mem->Offset());
+			Variable member = Variable(offsetData, mem->Meta());
+			result += "\"" + mem->Name() + "\"" + " : " + member.type->Serialize(member.getAddress(), member.type);
+			if (mem->Next())
+			{
+				result += ",\n";
+			}
+			else
+			{
+				result += "\n";
+			}
+
+			mem = mem->Next();
+		}
+
+		result += "}";
+	}
+	else
+	{
+		result += var.type->Serialize(var.getAddress());
+	}
+
+	return result;
+}
+
+
+
+
+//---------------------------------------------------------
+
+Member::Member(std::string string, unsigned val, MetaType *meta) : name(string), offset(val), data(meta), next(NULL)
+{
+}
+
+Member::~Member()
+{
+}
+
+const std::string& Member::Name(void) const
+{
+	return name;
+}
+
+unsigned Member::Offset(void) const
+{
+	return offset;
+}
+
+const MetaType *Member::Meta(void) const
+{
+	return data;
+}
+
+Member *& Member::Next(void)
+{
+	return next;
+}
+
+Member *const& Member::Next(void) const
+{
+	return next;
+}
+
+MetaType::MetaType(std::string string, unsigned val) : m_name(string), m_size(val), m_members(NULL), m_lastMember(NULL)
+{
+}
+
+MetaType::~MetaType()
+{
+}
+
+void MetaType::Init(std::string string, unsigned val)
+{
+	m_name = string;
+	m_size = val;
+}
+
+const std::string& MetaType::Name(void) const
+{
+	return m_name;
+}
+
+unsigned MetaType::Size(void) const
+{
+	return m_size;
+}
+
+void MetaType::AddMember(const Member *member)
+{
+	if (!m_members)
+		m_members = const_cast<Member *>(member);
+	else
+		m_lastMember->Next() = const_cast<Member *>(member);
+
+	m_lastMember = const_cast<Member *>(member);
+}
+
+bool MetaType::HasMembers(void) const
+{
+	return (m_members) ? true : false;
+}
+
+void MetaType::Copy(void *dest, const void *src) const
+{
+	memcpy(dest, src, m_size);
+}
+
+void MetaType::Delete(void *data) const
+{
+	delete[] reinterpret_cast<char *>(data);
+	data = NULL;
+}
+
+void *MetaType::NewCopy(const void *src) const
+{
+	void *data = new char[m_size];
+	memcpy(data, src, m_size);
+	return data;
+}
+
+void *MetaType::New(void) const
+{
+	return new char[m_size];
+}
+
+const Member *MetaType::Members(void) const
+{
+	return m_members;
+}
+
+void MetaType::PrintMembers(std::ostream& os) const
+{
+	const Member *mem = m_members;
+
+	os << "Members for Meta: " << m_name << std::endl;
+
+	while (mem)
+	{
+		os << "  " << mem->Meta()->Name() << " " << mem->Name() << std::endl;
+		mem = mem->Next();
+	}
+}
+
+void MetaType::SetSerialize(SerializeFn fn)
+{
+	serialize = fn;
+}
+
+inline void MetaType::SetDeSerialize(DeSerializeFn fn)
+{
+	deserialize = fn;
+}
+
+std::string MetaType::Serialize(void* v, const MetaType * m) const
+{
+	if (serialize)
+		return serialize(v);
+	else
+		if (m != nullptr)
+			return ToJson(v, m);
+		else
+			return ToJson<void>(v);
+}
+
+std::string MetaType::ToJson(void* v, const MetaType* m) { return m->ToJson(Variable(v, m)); }
+
+
+
+DEFINE_META_PRIMITIVE(int);
+DEFINE_META_PRIMITIVE(std::string);
+DEFINE_META_PRIMITIVE(float);
+DEFINE_META_PRIMITIVE(const char*);
+DEFINE_META_PRIMITIVE(char);
+DEFINE_META_PRIMITIVE(signed char);
+DEFINE_META_PRIMITIVE(short int);
+DEFINE_META_PRIMITIVE(long int);
+DEFINE_META_PRIMITIVE(unsigned char);
+DEFINE_META_PRIMITIVE(unsigned short int);
+DEFINE_META_PRIMITIVE(unsigned int);
+DEFINE_META_PRIMITIVE(unsigned long int);
+DEFINE_META_PRIMITIVE(wchar_t);
+DEFINE_META_PRIMITIVE(bool);
+DEFINE_META_PRIMITIVE(double);
+DEFINE_META_PRIMITIVE(long double);
