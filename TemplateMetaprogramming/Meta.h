@@ -2,6 +2,8 @@
 #include <type_traits>
 #include <string>
 #include <rapidjson\rapidjson.h>
+#include <rapidjson\document.h>
+#include <unordered_map>
 
 class Variable;
 class MetaType;
@@ -11,7 +13,8 @@ class MetaType;
   ((void *)(((char *)(PTR)) + (OFFSET)))
 
 typedef std::string(*SerializeFn)(void*);
-typedef void(*DeSerializeFn)(void*, std::string, const MetaType*);
+typedef void(*DeSerializeFn)(void*, rapidjson::Value&, const MetaType*);
+
 
 #define DEFINE_META( T ) \
   MetaCreator<std::remove_cv<T>::type> UNIQUE_NAME_GENERATOR( )( #T, sizeof( T ) ); \
@@ -40,10 +43,6 @@ typedef void(*DeSerializeFn)(void*, std::string, const MetaType*);
 
 #define ADD_MEMBER( MEMBER ) \
   AddMember( #MEMBER, (unsigned)(&(NullCast( )->MEMBER)), META( NullCast( )->MEMBER ))
-
-#define SET_SERIALIZE( FN ) \
-  MetaCreator<std::remove_cv<TYPE>::type>::SetSerializeFn( FN )
-
 
 #define PASTE_TOKENS( _, __ ) _##__
 #define NAME_GENERATOR_INTERNAL( _ ) PASTE_TOKENS( GENERATED_TOKEN_, _ )
@@ -106,7 +105,7 @@ public:
 	void Init(std::string string, unsigned val);
 
 	const std::string& Name(void) const;
-	const std::string ToJson(Variable& var) const;
+	
 	unsigned Size(void) const;
 	void AddMember(const Member *member);
 	bool HasMembers(void) const;
@@ -122,10 +121,13 @@ public:
 	void SetSerialize(SerializeFn fn = NULL);
 	void SetDeSerialize(DeSerializeFn fn = NULL);
 	std::string MetaType::Serialize(void* v, const MetaType * m=nullptr) const;
+	void MetaType::DeSerialize(void* v, rapidjson::Value& val, const MetaType * m = nullptr) const;
 
 #pragma region ToJson
+	const std::string ToJson(Variable& var) const;
+
 	template<typename T>
-	static std::string ToJson(void* v) { return "default"; };
+	static std::string ToJson(void* v) { return "null"; };
 
 	static std::string ToJson(void* v, const MetaType* m);
 
@@ -187,13 +189,64 @@ public:
 
 	
 #pragma region FromJson
+	static void FromJson(rapidjson::Value& src, void* dest, const MetaType* type)
+	{
+		if (type->HasMembers())
+		{
+			const Member* mem = type->Members();
+			while (mem)
+			{
+				assert(src.IsObject());
+				assert(src.HasMember(mem->Name().c_str()));//json member not present in object
+
+				rapidjson::Value& memberVal = src[mem->Name().c_str()];
+				void* memberDest = PTR_ADD(dest, mem->Offset());
+				mem->Meta()->DeSerialize(memberDest, memberVal, mem->Meta());
+
+				mem = mem->Next();
+			}
+		}
+		else
+		{
+			type->DeSerialize(dest, src, type);
+		}
+	}
 	template<typename T>
-	static void FromJson(void* v, std::string json, const MetaType* m) { std::cout << "DeSerialization not defined" << std::endl; };
+	static void FromJson(void* v, rapidjson::Value&, const MetaType* m) { std::cout << "DeSerialization not defined for type: " << m->m_name  << std::endl; };
 
 	template<>
-	static void FromJson<int>(void* v, std::string json, const MetaType* m)
+	static void FromJson<int>(void* v, rapidjson::Value& rVal, const MetaType* m)
 	{
+		int& val = *(int*)(v);
+		val = rVal.GetInt();
+	}
 
+	template<>
+	static void FromJson<char*>(void* v, rapidjson::Value& rVal, const MetaType* m)
+	{
+		const char* val = *(char**)(v);
+		val = rVal.GetString();
+	}
+
+	template<>
+	static void FromJson<const char*>(void* v, rapidjson::Value& rVal, const MetaType* m)
+	{
+		const char* val = *(char**)(v);
+		val = rVal.GetString();
+	}
+
+	template<>
+	static void FromJson<std::string>(void* v, rapidjson::Value& rVal, const MetaType* m)
+	{
+		std::string& val = *(std::string*)(v);
+		val = rVal.GetString();
+	}
+
+	template<>
+	static void FromJson<float>(void* v, rapidjson::Value& rVal, const MetaType* m)
+	{
+		float& val = *(float*)(v);
+		val = rVal.GetFloat();
 	}
 #pragma endregion
 
@@ -229,7 +282,10 @@ struct Variable
 	template <typename T>
 	void FromJson(std::string json)
 	{
-		type->FromJson<T>(address, json, type);
+		rapidjson::Document document;
+		document.Parse(json.c_str());
+		assert(document.IsObject());
+		type->FromJson(document, address, type);
 	}
 
 	std::string ToJson()
@@ -321,96 +377,6 @@ public:
 		return &instance;
 	}
 };
-
-
-//class Int : public MetaType
-//{
-//public:
-//	Int() : MetaType("int", sizeof(int)) {};
-//	virtual void FromString(std::string v, void* value) const override
-//	{
-//
-//	}
-//
-//	virtual std::string ToString(void* v) const override
-//	{
-//		static char buf[65];
-//		sprintf_s(buf, "%d", *(int*)v);
-//		return buf;
-//	}
-//
-//} IntMetaInstance;
-//
-//class CString : public MetaType
-//{
-//public:
-//	CString() : MetaType("string", sizeof(char*)) {};
-//
-//	virtual void FromString(std::string v, void* value) const override
-//	{
-//
-//	}
-//
-//	virtual std::string ToString(void* v) const override
-//	{
-//		std::string result = "\"";
-//		result += (*(char**)(v));
-//		return result + "\"";
-//	}
-//
-//} CStringMetaInstance;
-//
-//class Float : public MetaType
-//{
-//public:
-//	Float() : MetaType("float", sizeof(float)) {};
-//
-//	virtual void FromString(std::string s, void* value) const override
-//	{
-//
-//	}
-//
-//	virtual std::string ToString(void* v) const override
-//	{
-//		static char buf[65];
-//		sprintf_s(buf, "%d", *(float*)v);
-//		return buf;
-//	}
-//
-//} FloatMetaInstance;
-//
-//class Double : public MetaType
-//{
-//public:
-//	Double() : MetaType("double", sizeof(double)) {};
-//
-//	virtual void FromString(std::string s, void* value) const override
-//	{
-//
-//	}
-//
-//	virtual std::string ToString(void* v) const override
-//	{
-//		static char buf[65];
-//		sprintf_s(buf, "%d", *(double*)v);
-//		return buf;
-//	}
-//
-//} DoubleMetaInstance;
-
-
-//template<typename Type>
-//MetaType& GetMetaType(Type t) { return *MetaCreator<std::remove_cv<Type>::type>::Get(); };
-//
-//template<>
-//MetaType& GetMetaType<int>(int) { return IntMetaInstance; };
-//
-//template<>
-//MetaType& GetMetaType<float>(float) { return FloatMetaInstance; };
-//
-//template<>
-//MetaType& GetMetaType<const char*>(const char *) { return CStringMetaInstance; };
-
 
 const std::string MetaType::ToJson(Variable& var) const
 {
@@ -579,10 +545,29 @@ std::string MetaType::Serialize(void* v, const MetaType * m) const
 	if (serialize)
 		return serialize(v);
 	else
+	{
 		if (m != nullptr)
+		{
 			return ToJson(v, m);
+		}
 		else
+		{
 			return ToJson<void>(v);
+		}
+	}
+		
+			
+}
+
+inline void MetaType::DeSerialize(void * v, rapidjson::Value & val, const MetaType * m) const
+{
+	if (deserialize)
+		deserialize(v, val, m);
+	else
+		if (m != nullptr)
+			FromJson(val, v, m);
+		else
+			FromJson<void>(v, val, m);
 }
 
 std::string MetaType::ToJson(void* v, const MetaType* m) { return m->ToJson(Variable(v, m)); }

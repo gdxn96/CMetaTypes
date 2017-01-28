@@ -6,6 +6,7 @@
 #include <vector>
 #include <assert.h>
 #include "Meta.h"
+#include <fstream>
 
 
 
@@ -60,7 +61,8 @@ public:
 	META_DATA(Object);
 	const int x = 3, y = 4, z = 5;
 	std::string a = "aaa";
-	Vec v;
+	const Vec v;
+	long j;
 };
 
 DEFINE_META(Object)
@@ -70,14 +72,52 @@ DEFINE_META(Object)
 	ADD_MEMBER(x);
 	ADD_MEMBER(a);
 	ADD_MEMBER(v);
+	ADD_MEMBER(j);
 }
+
+std::string ReadFile(std::string filePath)
+{
+	std::string contents;
+	std::string line;
+	std::ifstream myfile("example.json");
+	if (myfile.is_open())
+	{
+		while (getline(myfile, line))
+		{
+			contents += line + "\n";
+		}
+		myfile.close();
+	}
+	else 
+	{
+		std::cout << "Unable to open file" << std::endl;
+	}
+
+	return contents;
+}
+
+
 
 int main()
 {
 	Object x;
 	
 	std::string json = Variable(&x).ToJson();
+	std::cout << json << std::endl;
+	
+
+	std::ofstream myfile;
+	myfile.open("example.json");
+	myfile << json;
+	myfile.close();
+
+	std::cin.get();
+
+	json = ReadFile("example.json");
+
 	Variable(&x).FromJson<Object>(json);
+	json = Variable(&x).ToJson();
+	std::cout << json << std::endl;
 	
 	int realValue = 42;
 
