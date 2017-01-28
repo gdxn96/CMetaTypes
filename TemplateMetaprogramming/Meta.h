@@ -8,11 +8,15 @@
 class Variable;
 class MetaType;
 
+#define META_DEBUGGING true
+
+#define DEBUG(x) if (META_DEBUGGING) { std::cerr << x << std::endl; }
+
 // Takes a pointer and returns a pointer offset in bytes
 #define PTR_ADD( PTR, OFFSET ) \
   ((void *)(((char *)(PTR)) + (OFFSET)))
 
-typedef std::string(*SerializeFn)(void*);
+typedef std::string(*SerializeFn)(void*, const MetaType* m);
 typedef void(*DeSerializeFn)(void*, rapidjson::Value&, const MetaType*);
 
 
@@ -127,19 +131,30 @@ public:
 	const std::string ToJson(Variable& var) const;
 
 	template<typename T>
-	static std::string ToJson(void* v) { return "null"; };
+	static std::string ToJson(void* v, const MetaType* m) 
+	{ 
+		if (m != nullptr)
+		{
+			DEBUG("Serialization not supported for type: " + m->m_name);
+		}
+		else
+		{
+			DEBUG("Serialization not supported for unregistered type");
+		}
+		return "null"; 
+	};
 
 	static std::string ToJson(void* v, const MetaType* m);
 
 	template<>
-	static std::string ToJson<int>(void* val) {
+	static std::string ToJson<int>(void* val, const MetaType* m) {
 		static char buf[65];
 		sprintf_s(buf, "%d", *(int*)val);
 		return buf;
 	}
 
 	template<>
-	static std::string ToJson<bool>(void* val) {
+	static std::string ToJson<bool>(void* val, const MetaType* m) {
 		bool boolean = *(bool*)val;
 		if (boolean)
 		{
@@ -152,35 +167,35 @@ public:
 	}
 
 	template<>
-	static std::string ToJson<double>(void* val) {
+	static std::string ToJson<double>(void* val, const MetaType* m) {
 		static char buf[65];
 		sprintf_s(buf, "%d", *(double*)val);
 		return buf;
 	}
 
 	template<>
-	static std::string ToJson<float>(void* val) {
+	static std::string ToJson<float>(void* val, const MetaType* m) {
 		static char buf[65];
 		sprintf_s(buf, "%d", *(float*)val);
 		return buf;
 	}
 
 	template<>
-	static std::string ToJson<char*>(void* val) {
+	static std::string ToJson<char *>(void* val, const MetaType* m) {
 		std::string result = "\"";
 		result += (*(char**)(val));
 		return result + "\"";
 	}
 
 	template<>
-	static std::string ToJson<const char*>(void* val) {
+	static std::string ToJson<const char*>(void* val, const MetaType* m) {
 		std::string result = "\"";
 		result += (*(char**)(val));
 		return result + "\"";
 	}
 
 	template<>
-	static std::string ToJson<std::string>(void* val) {
+	static std::string ToJson<std::string>(void* val, const MetaType* m) {
 		std::string result = "\"";
 		result += (*(std::string*)(val));
 		return result + "\"";
@@ -212,41 +227,42 @@ public:
 		}
 	}
 	template<typename T>
-	static void FromJson(void* v, rapidjson::Value&, const MetaType* m) { std::cout << "DeSerialization not defined for type: " << m->m_name  << std::endl; };
+	static void FromJson(void* v, rapidjson::Value&, const MetaType* m) 
+	{
+		DEBUG("DeSerialization not supported for type: " + m->m_name);
+	};
 
 	template<>
 	static void FromJson<int>(void* v, rapidjson::Value& rVal, const MetaType* m)
 	{
-		int& val = *(int*)(v);
-		val = rVal.GetInt();
+		*(int*)v = rVal.GetInt();
 	}
 
-	template<>
-	static void FromJson<char*>(void* v, rapidjson::Value& rVal, const MetaType* m)
-	{
-		const char* val = *(char**)(v);
-		val = rVal.GetString();
-	}
+	//char* and const char* are weird, maybe I can't modify the memory directly?
+	//template<>
+	//static void FromJson<char*>(void* v, rapidjson::Value& rVal, const MetaType* m)
+	//{
+	//	const char * string = static_cast<char*> (v);
+	//	string = rVal.GetString();
+	//}
 
-	template<>
-	static void FromJson<const char*>(void* v, rapidjson::Value& rVal, const MetaType* m)
-	{
-		const char* val = *(char**)(v);
-		val = rVal.GetString();
-	}
+	//template<>
+	//static void FromJson<const char*>(void* v, rapidjson::Value& rVal, const MetaType* m)
+	//{
+	//	const char * string = static_cast<char*> (v);
+	//	string = rVal.GetString();
+	//}
 
 	template<>
 	static void FromJson<std::string>(void* v, rapidjson::Value& rVal, const MetaType* m)
 	{
-		std::string& val = *(std::string*)(v);
-		val = rVal.GetString();
+		*(std::string*)v = rVal.GetString();
 	}
 
 	template<>
 	static void FromJson<float>(void* v, rapidjson::Value& rVal, const MetaType* m)
 	{
-		float& val = *(float*)(v);
-		val = rVal.GetFloat();
+		*(float*)v = rVal.GetFloat();
 	}
 #pragma endregion
 
@@ -517,19 +533,6 @@ const Member *MetaType::Members(void) const
 	return m_members;
 }
 
-void MetaType::PrintMembers(std::ostream& os) const
-{
-	const Member *mem = m_members;
-
-	os << "Members for Meta: " << m_name << std::endl;
-
-	while (mem)
-	{
-		os << "  " << mem->Meta()->Name() << " " << mem->Name() << std::endl;
-		mem = mem->Next();
-	}
-}
-
 void MetaType::SetSerialize(SerializeFn fn)
 {
 	serialize = fn;
@@ -543,7 +546,7 @@ inline void MetaType::SetDeSerialize(DeSerializeFn fn)
 std::string MetaType::Serialize(void* v, const MetaType * m) const
 {
 	if (serialize)
-		return serialize(v);
+		return serialize(v, m);
 	else
 	{
 		if (m != nullptr)
@@ -552,7 +555,7 @@ std::string MetaType::Serialize(void* v, const MetaType * m) const
 		}
 		else
 		{
-			return ToJson<void>(v);
+			return ToJson<void>(v, m);
 		}
 	}
 		
@@ -578,6 +581,7 @@ DEFINE_META_PRIMITIVE(int);
 DEFINE_META_PRIMITIVE(std::string);
 DEFINE_META_PRIMITIVE(float);
 DEFINE_META_PRIMITIVE(const char*);
+DEFINE_META_PRIMITIVE(char*);
 DEFINE_META_PRIMITIVE(char);
 DEFINE_META_PRIMITIVE(signed char);
 DEFINE_META_PRIMITIVE(short int);
