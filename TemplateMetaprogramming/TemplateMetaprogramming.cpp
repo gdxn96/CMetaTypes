@@ -99,14 +99,14 @@ std::string ReadFile(std::string filePath)
 	return contents;
 }
 
-#define var(x) Variable(x, #x)
+
 
 int main()
 {
 	Object x;
 	int y = 7;
 	
-	std::string json = var(&y).ToJson();
+	std::string json = Variable(&x).ToJson();
 	std::cout << json << std::endl;
 	
 
@@ -119,8 +119,8 @@ int main()
 
 	json = ReadFile("example.json");
 
-	var(&x).FromJson<Object>(json);
-	json = var(&x).ToJson();
+	Variable(&x).FromJson<Object>(json);
+	json = Variable(&x).ToJson();
 	std::cout << json << std::endl;
 
 	system("PAUSE");
