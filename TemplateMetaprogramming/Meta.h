@@ -3,12 +3,20 @@
 #include <string>
 #include <rapidjson\rapidjson.h>
 #include <rapidjson\document.h>
+#include <rapidjson\prettywriter.h>
 #include <unordered_map>
 
-class Variable;
+struct Variable;
 class MetaType;
 
 #define META_DEBUGGING true
+
+#ifdef _DEBUG 
+#define META_DEBUGGING _DEBUG
+#endif 
+#ifdef NDEBUG 
+#define META_DEBUGGING !NDEBUG
+#endif 
 
 #define DEBUG(x) if (META_DEBUGGING) { std::cerr << x << std::endl; }
 
@@ -174,6 +182,13 @@ public:
 	}
 
 	template<>
+	static std::string ToJson<long>(void* val, const MetaType* m) {
+		static char buf[65];
+		sprintf_s(buf, "%d", *(long*)val);
+		return buf;
+	}
+
+	template<>
 	static std::string ToJson<float>(void* val, const MetaType* m) {
 		static char buf[65];
 		sprintf_s(buf, "%d", *(float*)val);
@@ -238,6 +253,18 @@ public:
 		*(int*)v = rVal.GetInt();
 	}
 
+	template<>
+	static void FromJson<long>(void* v, rapidjson::Value& rVal, const MetaType* m)
+	{
+		*(long*)v = rVal.GetInt();
+	}
+
+	template<>
+	static void FromJson<bool>(void* v, rapidjson::Value& rVal, const MetaType* m)
+	{
+		*(bool*)v = rVal.GetBool();
+	}
+
 	//char* and const char* are weird, maybe I can't modify the memory directly?
 	//template<>
 	//static void FromJson<char*>(void* v, rapidjson::Value& rVal, const MetaType* m)
@@ -277,6 +304,15 @@ private:
 	unsigned m_size;
 };
 
+std::string PrettifyJson(rapidjson::Document & val)
+{
+	rapidjson::StringBuffer buffer;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
+	val.Accept(writer);
+	std::string json = buffer.GetString();
+	return json;
+}
+
 struct Variable
 {
 	Variable() :
@@ -306,7 +342,11 @@ struct Variable
 
 	std::string ToJson()
 	{
-		return type->ToJson(*this);
+		std::string json = type->ToJson(*this);
+		rapidjson::Document d;
+		d.Parse(json.c_str());
+		json = PrettifyJson(d);
+		return json;
 	}
 
 	template <typename T>
@@ -399,20 +439,16 @@ const std::string MetaType::ToJson(Variable& var) const
 	std::string result;
 	if (HasMembers())
 	{
-		result += "{\n";
+		result += "{";
 		const Member *mem = m_members;
 		while (mem)
 		{
 			void *offsetData = PTR_ADD(var.getAddress(), mem->Offset());
 			Variable member = Variable(offsetData, mem->Meta());
-			result += "\"" + mem->Name() + "\"" + " : " + member.type->Serialize(member.getAddress(), member.type);
+			result += "\"" + mem->Name() + "\"" + ":" + member.type->Serialize(member.getAddress(), member.type);
 			if (mem->Next())
 			{
-				result += ",\n";
-			}
-			else
-			{
-				result += "\n";
+				result += ",";
 			}
 
 			mem = mem->Next();

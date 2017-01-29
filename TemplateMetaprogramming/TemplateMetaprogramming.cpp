@@ -8,8 +8,6 @@
 #include "Meta.h"
 #include <fstream>
 
-#define META_DEBUGGING false
-
 class Student
 {
 public:
@@ -62,9 +60,10 @@ public:
 
 private:
 	const int x = 3, y = 4, z = 5;
-	const char* a = "aaa";
+	std::string a = "aaa";
 	const Vec v;
 	long j;
+	bool exampleBool = false;
 };
 
 DEFINE_META(Object)
@@ -75,6 +74,7 @@ DEFINE_META(Object)
 	ADD_MEMBER(a);
 	ADD_MEMBER(v);
 	ADD_MEMBER(j);
+	ADD_MEMBER(exampleBool);
 }
 
 std::string ReadFile(std::string filePath)
@@ -103,9 +103,6 @@ std::string ReadFile(std::string filePath)
 int main()
 {
 	Object x;
-	const char * ssss = "aaa";
-	ssss = "lll";
-	std::cout << ssss << std::endl;
 	
 	std::string json = Variable(&x).ToJson();
 	std::cout << json << std::endl;
