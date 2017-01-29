@@ -8,6 +8,8 @@
 #include "Meta.h"
 #include <fstream>
 
+#define META_DEBUGGING true
+
 class Student
 {
 public:
@@ -35,15 +37,14 @@ DEFINE_META(Shane)
 	ADD_MEMBER(frankie);
 }
 
-#define var(x) RefVariable(#x, &x)
-
 class Vec
 {
 public:
 	META_DATA(Vec);
+	Vec() : shane(new Shane()) {};
 private:
 	float x = 10, y = 10;
-	Shane shane;
+	Shane* shane;
 };
 
 DEFINE_META(Vec)
@@ -98,13 +99,14 @@ std::string ReadFile(std::string filePath)
 	return contents;
 }
 
-
+#define var(x) Variable(x, #x)
 
 int main()
 {
 	Object x;
+	int y = 7;
 	
-	std::string json = Variable(&x).ToJson();
+	std::string json = var(&y).ToJson();
 	std::cout << json << std::endl;
 	
 
@@ -117,42 +119,9 @@ int main()
 
 	json = ReadFile("example.json");
 
-	Variable(&x).FromJson<Object>(json);
-	json = Variable(&x).ToJson();
+	var(&x).FromJson<Object>(json);
+	json = var(&x).ToJson();
 	std::cout << json << std::endl;
-	
-	int realValue = 42;
-
-	int i = 12345;
-	int j = 1234567890;
-	const char* string = "2424";
-	int vector = 0;
-	float f = 2.5f;
-
-	/*Variable a = var(f);
-	Variable b = var(i);
-
-	a = b;*/
-
-	//std::cout << a << std::endl;
-
-	/*std::vector<RefVariable> myVariables;
-	
-	myVariables.push_back(var(i));
-	myVariables.push_back(var(realValue));
-	myVariables.push_back(var(f));
-	myVariables.push_back(var(string));*/
-
-	/*for (RefVariable var : myVariables)
-	{
-		std::cout << var.type->Name() << " " <<  var.name << " = " << var.type->ToString(var.address) << std::endl;
-	}*/
-	//int& test = myVariables[0].get<int>();
-	//test = 8;
-
-	//string = meta::Cast<char*>(&i, meta::GetMetaType(i));
-
-	//std::cout << meta::GetMetaType("kjdbvbi").Name() << std::endl;
 
 	system("PAUSE");
 }
