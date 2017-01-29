@@ -41,10 +41,9 @@ class Vec
 {
 public:
 	META_DATA(Vec);
-	Vec() : shane(new Shane()) {};
 private:
 	float x = 10, y = 10;
-	Shane* shane;
+	Shane shane;
 };
 
 DEFINE_META(Vec)
@@ -62,7 +61,7 @@ public:
 private:
 	const int x = 3, y = 4, z = 5;
 	std::string a = "aaa";
-	const Vec v;
+	Vec v;
 	long j;
 	bool exampleBool = false;
 };
