@@ -4,8 +4,6 @@
 #include <time.h>
 #include <functional>
 
-//disclaimer, a good chunk of this code comes from Robert McDonagh because I wasn't bothered learning how <sys/stat> + <time.h> worked
-
 //allows the monitoring of files for changes and the invocation of a callback when it does
 class FileMonitor
 {

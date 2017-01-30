@@ -9,6 +9,7 @@ namespace JsonHandler
 	template<typename T>
 	std::string ReadFile(std::string filePath)
 	{
+		system("mkdir json");
 		std::string contents;
 		std::string line;
 		std::ifstream myfile(filePath);
