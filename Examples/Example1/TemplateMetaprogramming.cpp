@@ -6,7 +6,7 @@
 #include <vector>
 #include <assert.h>
 #include <fstream>
-#include "MetaSystem/MetaSystem.h"
+#include "../../MetaSystem/MetaSystem.h"
 
 #define META_DEBUGGING true
 
