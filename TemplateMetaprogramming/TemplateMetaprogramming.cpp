@@ -109,7 +109,7 @@ int main()
 	std::string json = Variable(&x).ToJson();
 	std::cout << json << std::endl;
 	
-	auto list = AutoLister<Object>::getInstances<Object>();
+	auto list = EntityList::get<Object>();
 
 	list;
 

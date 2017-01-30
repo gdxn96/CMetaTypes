@@ -2,6 +2,16 @@
 #include <vector>
 #include <algorithm>
 
+namespace EntityList
+{
+	template<typename T>
+	static std::vector<const T*>& get()
+	{
+		static std::vector<const T*> instances;
+		return instances;
+	}
+}
+
 template<typename T>
 class AutoLister
 {
@@ -14,14 +24,14 @@ public:
 	template<typename T>
 	static void RemoveElement(const T* element)
 	{
-		auto& instances = getInstances<T>();
+		auto& instances = EntityList::get<T>();
 		instances.erase(std::remove(instances.begin(), instances.end(), element), instances.end());
 	}
 
 	template<typename T>
 	static void AddElement(const T* element)
 	{
-		auto& instances = getInstances<T>();
+		auto& instances = EntityList::get<T>();
 		instances.push_back(element);
 	}
 
@@ -29,11 +39,5 @@ public:
 	{
 		RemoveElement<T>(static_cast<const T *>(this));
 	}
-
-	template<typename T>
-	static std::vector<const T*>& getInstances()
-	{
-		static std::vector<const T*> instances;
-		return instances;
-	}
 };
+
