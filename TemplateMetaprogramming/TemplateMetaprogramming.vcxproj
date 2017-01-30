@@ -147,6 +147,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AutoLister.h" />
     <ClInclude Include="Meta.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />

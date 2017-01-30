@@ -7,6 +7,7 @@
 #include <assert.h>
 #include "Meta.h"
 #include <fstream>
+#include "AutoLister.h"
 
 #define META_DEBUGGING true
 
@@ -53,7 +54,7 @@ DEFINE_META(Vec)
 	ADD_MEMBER(shane);
 }
 
-class Object
+class Object : public AutoLister<Object>
 {
 public: 
 	META_DATA(Object);
@@ -108,6 +109,9 @@ int main()
 	std::string json = Variable(&x).ToJson();
 	std::cout << json << std::endl;
 	
+	auto list = AutoLister<Object>::getInstances<Object>();
+
+	list;
 
 	std::ofstream myfile;
 	myfile.open("example.json");
