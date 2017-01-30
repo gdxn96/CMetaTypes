@@ -1,6 +1,9 @@
 #pragma once
 #include <vector>
 #include <algorithm>
+#pragma once
+#include <vector>
+#include <algorithm>
 
 namespace EntityList
 {
@@ -12,11 +15,13 @@ namespace EntityList
 	}
 }
 
+//Automagically lists every object that inherits from it
+//must pass type of self in as template param see: CRTP
 template<typename T>
 class AutoLister
 {
 public:
-	AutoLister() 
+	AutoLister()
 	{
 		AddElement<T>(static_cast<const T *>(this));
 	}
@@ -35,9 +40,8 @@ public:
 		instances.push_back(element);
 	}
 
-	virtual ~AutoLister() 
+	virtual ~AutoLister()
 	{
 		RemoveElement<T>(static_cast<const T *>(this));
 	}
 };
-
