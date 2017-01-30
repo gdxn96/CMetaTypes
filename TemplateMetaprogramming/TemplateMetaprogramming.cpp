@@ -55,12 +55,12 @@ DEFINE_META(Vec)
 	ADD_RE_MEMBER(shane);
 }
 
-class Object : public AutoLister<Object>
+class Object : public RuntimeEditable<Object>
 {
 public: 
 	META_DATA(Object);
-	Object() { /*RuntimeEditable::jsonInit();*/ };
-	Object(int _x) : x(_x) { /*RuntimeEditable::jsonInit();*/ };
+	Object() { RuntimeEditable::jsonInit(); };
+	Object(int _x) : x(_x) { RuntimeEditable::jsonInit(); };
 private:
 	const int x = 3, y = 4, z = 5;
 	std::string a = "aaa";
@@ -96,7 +96,7 @@ int main()
 
 	std::cin.get();
 
-
+	FileMonitor::getInstance().MonitorFiles(6);
 	
 
 	json = Variable(&x).ToJson();

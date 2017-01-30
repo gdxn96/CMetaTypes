@@ -8,9 +8,9 @@
 namespace EntityList
 {
 	template<typename T>
-	static std::vector<const T*>& get()
+	static std::vector<T*>& get()
 	{
-		static std::vector<const T*> instances;
+		static std::vector<T*> instances;
 		return instances;
 	}
 }
@@ -23,18 +23,18 @@ class AutoLister
 public:
 	AutoLister()
 	{
-		AddElement<T>(static_cast<const T *>(this));
+		AddElement<T>(static_cast<T *>(this));
 	}
 
 	template<typename T>
-	static void RemoveElement(const T* element)
+	static void RemoveElement(T* element)
 	{
 		auto& instances = EntityList::get<T>();
 		instances.erase(std::remove(instances.begin(), instances.end(), element), instances.end());
 	}
 
 	template<typename T>
-	static void AddElement(const T* element)
+	static void AddElement(T* element)
 	{
 		auto& instances = EntityList::get<T>();
 		instances.push_back(element);
@@ -42,6 +42,6 @@ public:
 
 	virtual ~AutoLister()
 	{
-		RemoveElement<T>(static_cast<const T *>(this));
+		RemoveElement<T>(static_cast<T *>(this));
 	}
 };

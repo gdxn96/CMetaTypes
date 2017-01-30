@@ -37,9 +37,15 @@ namespace JsonHandler
 	std::string& get(std::string filepath = "", bool forceReload=false)
 	{
 		static std::string json = "";
+		static std::string mFilePath = "";
+
 		if (forceReload)
 		{
-			json = ReadFile<T>(filepath);
+			if (filepath != "")
+			{
+				mFilePath = filepath;
+			}
+			json = ReadFile<T>(mFilePath);
 		}
 		return json;
 	}

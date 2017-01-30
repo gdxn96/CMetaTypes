@@ -3,9 +3,8 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <functional>
-#include "AutoLister.h"
 
-class FileMonitor : public AutoLister<FileMonitor>
+class FileMonitor
 {
 public:
 
