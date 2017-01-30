@@ -1,9 +1,9 @@
 #pragma once
 #include <type_traits>
 #include <string>
-#include <rapidjson\rapidjson.h>
-#include <rapidjson\document.h>
-#include <rapidjson\prettywriter.h>
+#include "dependancies\rapidjson\rapidjson.h"
+#include "dependancies\rapidjson\document.h"
+#include "dependancies\rapidjson\prettywriter.h"
 #include <unordered_map>
 #include "JsonMetaHandler.h"
 #include "RuntimeEditable.h"
@@ -485,8 +485,6 @@ const std::string MetaType::ToJson(Variable& var, bool reOnly) const
 
 	return result;
 }
-
-
 
 
 //---------------------------------------------------------

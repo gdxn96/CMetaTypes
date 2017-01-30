@@ -4,6 +4,9 @@
 #include <time.h>
 #include <functional>
 
+//disclaimer, a good chunk of this code comes from Robert McDonagh because I wasn't bothered learning how <sys/stat> + <time.h> worked
+
+//allows the monitoring of files for changes and the invocation of a callback when it does
 class FileMonitor
 {
 public:
@@ -14,6 +17,7 @@ public:
 		return instance;
 	}
 
+	//register file for monitoring
 	void WatchFile(std::string filePath, std::function<void()> callback)
 	{
 		m_monitoredFiles[filePath] = std::make_pair(getTimeInfo(filePath.c_str()), callback);

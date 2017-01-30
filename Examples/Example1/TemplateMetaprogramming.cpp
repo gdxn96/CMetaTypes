@@ -5,9 +5,8 @@
 #include <string>
 #include <vector>
 #include <assert.h>
-#include "Meta.h"
 #include <fstream>
-#include "RuntimeEditable.h"
+#include "MetaSystem/MetaSystem.h"
 
 #define META_DEBUGGING true
 
@@ -78,7 +77,6 @@ DEFINE_META(Object)
 	ADD_RE_MEMBER(v);
 	ADD_RE_MEMBER(j);
 	ADD_RE_MEMBER(exampleBool);
-	LINK_TO_JSON(Object);
 }
 
 

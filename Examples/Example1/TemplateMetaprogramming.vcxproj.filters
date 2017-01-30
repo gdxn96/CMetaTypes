@@ -24,21 +24,6 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Meta.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AutoLister.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="RuntimeEditable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="JsonMetaHandler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FileMonitor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

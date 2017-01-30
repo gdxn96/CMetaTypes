@@ -2,6 +2,7 @@
 #include "AutoLister.h"
 #include "Meta.h"
 
+//inherits from AutoLister, this is how we update all objects when object json is updated
 template<typename T>
 class RuntimeEditable : public AutoLister<T>
 {

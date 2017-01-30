@@ -102,7 +102,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)dependancies</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)dependancies;$(ProjectDir);</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -136,7 +136,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)dependancies</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)dependancies;$(ProjectDir);</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -149,11 +149,6 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AutoLister.h" />
-    <ClInclude Include="FileMonitor.h" />
-    <ClInclude Include="JsonMetaHandler.h" />
-    <ClInclude Include="Meta.h" />
-    <ClInclude Include="RuntimeEditable.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>

@@ -1,9 +1,6 @@
 #pragma once
 #include <vector>
 #include <algorithm>
-#pragma once
-#include <vector>
-#include <algorithm>
 
 namespace EntityList
 {
@@ -17,6 +14,7 @@ namespace EntityList
 
 //Automagically lists every object that inherits from it
 //must pass type of self in as template param see: CRTP
+//access list by calling EntityList::get<TYPE>();
 template<typename T>
 class AutoLister
 {
