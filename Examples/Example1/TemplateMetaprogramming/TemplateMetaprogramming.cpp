@@ -6,7 +6,7 @@
 #include <vector>
 #include <assert.h>
 #include <fstream>
-#include "../../../../MetaSystem/MetaSystem.h"
+#include "../../../MetaSystem/MetaSystem.h"
 
 #define META_DEBUGGING true
 
@@ -91,6 +91,7 @@ int main()
 	//std::cout << json << std::endl;
 
 	json = Variable(y).ToJson();
+	Variable(y).FromJson<Object>(json);
 	//std::cout << json << std::endl;
 
 
