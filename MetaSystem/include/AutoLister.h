@@ -1,13 +1,15 @@
 #pragma once
 #include <vector>
 #include <algorithm>
+#include <iostream>
 
 namespace EntityList
 {
 	template<typename T>
-	static std::vector<T*>& get()
+	static std::vector<T *>& get()
 	{
-		static std::vector<T*> instances;
+		static std::vector<T *> instances;
+		std::cout << instances.size() << std::endl;
 		return instances;
 	}
 }

@@ -2,7 +2,8 @@
 #include <string>
 #include <fstream>
 #include <iostream>
-#include "Meta.h"
+#include "meta.h"
+#include "AutoLister.h"
 
 namespace JsonHandler
 {
@@ -51,4 +52,3 @@ namespace JsonHandler
 		return json;
 	}
 }
-

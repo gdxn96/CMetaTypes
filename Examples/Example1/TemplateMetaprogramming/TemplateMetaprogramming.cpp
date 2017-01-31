@@ -64,7 +64,7 @@ private:
 	const int x = 3, y = 4, z = 5;
 	std::string a = "aaa";
 	Vec v;
-	long j;
+	long j; 
 	bool exampleBool = false;
 };
 
@@ -84,25 +84,29 @@ DEFINE_META(Object)
 
 int main()
 {
-	Object x;
-	Object y(42);
+	Object* x = new Object();
+	Object* y = new Object(42);
 	
-	std::string json = Variable(&x).ToJson();
-	std::cout << json << std::endl;
+	std::string json = Variable(x).ToJson();
+	//std::cout << json << std::endl;
 
-	json = Variable(&y).ToJson();
-	std::cout << json << std::endl;
+	json = Variable(y).ToJson();
+	//std::cout << json << std::endl;
+
+
 
 	std::cin.get();
 
 	FileMonitor::getInstance().MonitorFiles(6);
+
+	auto& list = EntityList::get<Object>();
+	list;
 	
+	json = Variable(x).ToJson();
+	//std::cout << json << std::endl;
 
-	json = Variable(&x).ToJson();
-	std::cout << json << std::endl;
-
-	json = Variable(&y).ToJson();
-	std::cout << json << std::endl;
+	json = Variable(y).ToJson();
+	//std::cout << json << std::endl;
 
 	system("PAUSE");
 }

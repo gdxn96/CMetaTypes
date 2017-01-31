@@ -9,6 +9,8 @@
 #include "RuntimeEditable.h"
 #include "FileMonitor.h"
 
+
+
 struct Variable;
 class MetaType;
 
@@ -32,7 +34,7 @@ typedef void(*DeSerializeFn)(void*, rapidjson::Value&, const MetaType*);
 
 
 #define DEFINE_META(T) \
-  MetaCreator<std::remove_cv<T>::type> UNIQUE_NAME_GENERATOR()(#T, sizeof(T)); \
+  static MetaCreator<std::remove_cv<T>::type> UNIQUE_NAME_GENERATOR()(#T, sizeof(T)); \
   std::remove_cv<T>::type *T::NullCast() { return reinterpret_cast<std::remove_cv<T>::type *>(NULL); } \
   void T::AddMember(std::string name, unsigned offset, MetaType *data, bool re) { return MetaCreator<std::remove_cv<T>::type>::AddMember(name, offset, data, re); } \
   void MetaCreator<std::remove_cv<T>::type>::RegisterMetaType() { T::RegisterMetaType(); } \
@@ -49,11 +51,11 @@ typedef void(*DeSerializeFn)(void*, rapidjson::Value&, const MetaType*);
 
 // Defines the RegisterMetaType for you
 #define DEFINE_META_PRIMITIVE(T) \
-  MetaCreator<std::remove_cv<T>::type> UNIQUE_NAME_GENERATOR()(#T, sizeof(T)); \
-  void MetaCreator<std::remove_cv<T>::type>::RegisterMetaType() \
+  static MetaCreator<std::remove_cv<T>::type> UNIQUE_NAME_GENERATOR()(#T, sizeof(T)); \
+  inline void MetaCreator<std::remove_cv<T>::type>::RegisterMetaType() \
   { \
     MetaCreator<std::remove_cv<T>::type>::SetSerializeFn(MetaType::ToJson<std::remove_cv<T>::type>); \
-	MetaCreator<std::remove_cv<T>::type>::SetDeSerializeFn(MetaType::FromJson<std::remove_cv<T>::type>); \
+    MetaCreator<std::remove_cv<T>::type>::SetDeSerializeFn(MetaType::FromJson<std::remove_cv<T>::type>); \
   }
 
 #define ADD_MEMBER(MEMBER) \
@@ -68,11 +70,11 @@ typedef void(*DeSerializeFn)(void*, rapidjson::Value&, const MetaType*);
   std::string x = #OBJECT; \
   std::string jsonPath = std::string("json/") + x + std::string(".json"); \
   JsonHandler::get<OBJECT>(jsonPath, true); \
-  FileMonitor::getInstance().WatchFile(jsonPath, std::bind(&RuntimeEditable<OBJECT>::reloadJson));
+  FileMonitor::getInstance().WatchFile(jsonPath, std::bind(&RuntimeEditable<std::remove_cv<OBJECT>::type>::reloadJson));
 
-#define PASTE_TOKENS(_, __) _##__
-#define NAME_GENERATOR_INTERNAL(_) PASTE_TOKENS(GENERATED_TOKEN_, _)
-#define UNIQUE_NAME_GENERATOR() NAME_GENERATOR_INTERNAL(__COUNTER__)
+#define PASTE_TOKENS( _, __ ) _##__
+#define NAME_GENERATOR_INTERNAL( _ ) PASTE_TOKENS( GENERATED_TOKEN_, _ )
+#define UNIQUE_NAME_GENERATOR( ) NAME_GENERATOR_INTERNAL( __COUNTER__ )
 
 //
 // META_TYPE
@@ -317,7 +319,7 @@ private:
 	unsigned m_size;
 };
 
-std::string PrettifyJson(rapidjson::Document & val)
+inline std::string PrettifyJson(rapidjson::Document & val)
 {
 	rapidjson::StringBuffer buffer;
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
@@ -450,7 +452,7 @@ public:
 	}
 };
 
-const std::string MetaType::ToJson(Variable& var, bool reOnly) const
+inline const std::string MetaType::ToJson(Variable& var, bool reOnly) const
 {
 	std::string result;
 	if (HasMembers())
@@ -489,35 +491,35 @@ const std::string MetaType::ToJson(Variable& var, bool reOnly) const
 
 //---------------------------------------------------------
 
-Member::Member(std::string string, unsigned val, MetaType *meta, bool re) : name(string), offset(val), data(meta), next(NULL), runtimeEditable(re)
+inline Member::Member(std::string string, unsigned val, MetaType *meta, bool re) : name(string), offset(val), data(meta), next(NULL), runtimeEditable(re)
 {
 }
 
-Member::~Member()
+inline Member::~Member()
 {
 }
 
-const std::string& Member::Name() const
+inline const std::string& Member::Name() const
 {
 	return name;
 }
 
-unsigned Member::Offset() const
+inline unsigned Member::Offset() const
 {
 	return offset;
 }
 
-const MetaType *Member::Meta() const
+inline const MetaType *Member::Meta() const
 {
 	return data;
 }
 
-Member *& Member::Next()
+inline Member *& Member::Next()
 {
 	return next;
 }
 
-Member *const& Member::Next() const
+inline Member *const& Member::Next() const
 {
 	return next;
 }
@@ -527,31 +529,31 @@ inline bool Member::IsRuntimeEditable() const
 	return runtimeEditable;
 }
 
-MetaType::MetaType(std::string string, unsigned val) : m_name(string), m_size(val), m_members(NULL), m_lastMember(NULL)
+inline MetaType::MetaType(std::string string, unsigned val) : m_name(string), m_size(val), m_members(NULL), m_lastMember(NULL)
 {
 }
 
-MetaType::~MetaType()
+inline MetaType::~MetaType()
 {
 }
 
-void MetaType::Init(std::string string, unsigned val)
+inline void MetaType::Init(std::string string, unsigned val)
 {
 	m_name = string;
 	m_size = val;
 }
 
-const std::string& MetaType::Name() const
+inline const std::string& MetaType::Name() const
 {
 	return m_name;
 }
 
-unsigned MetaType::Size() const
+inline unsigned MetaType::Size() const
 {
 	return m_size;
 }
 
-void MetaType::AddMember(const Member *member)
+inline void MetaType::AddMember(const Member *member)
 {
 	if (!m_members)
 		m_members = const_cast<Member *>(member);
@@ -561,40 +563,40 @@ void MetaType::AddMember(const Member *member)
 	m_lastMember = const_cast<Member *>(member);
 }
 
-bool MetaType::HasMembers() const
+inline bool MetaType::HasMembers() const
 {
 	return (m_members) ? true : false;
 }
 
-void MetaType::Copy(void *dest, const void *src) const
+inline void MetaType::Copy(void *dest, const void *src) const
 {
 	memcpy(dest, src, m_size);
 }
 
-void MetaType::Delete(void *data) const
+inline void MetaType::Delete(void *data) const
 {
 	delete[] reinterpret_cast<char *>(data);
 	data = NULL;
 }
 
-void *MetaType::NewCopy(const void *src) const
+inline void *MetaType::NewCopy(const void *src) const
 {
 	void *data = new char[m_size];
 	memcpy(data, src, m_size);
 	return data;
 }
 
-void *MetaType::New() const
+inline void *MetaType::New() const
 {
 	return new char[m_size];
 }
 
-const Member *MetaType::Members() const
+inline const Member *MetaType::Members() const
 {
 	return m_members;
 }
 
-void MetaType::SetSerialize(SerializeFn fn)
+inline void MetaType::SetSerialize(SerializeFn fn)
 {
 	serialize = fn;
 }
@@ -604,7 +606,7 @@ inline void MetaType::SetDeSerialize(DeSerializeFn fn)
 	deserialize = fn;
 }
 
-std::string MetaType::Serialize(void* v, const MetaType * m, bool reOnly) const
+inline std::string MetaType::Serialize(void* v, const MetaType * m, bool reOnly) const
 {
 	if (serialize)
 		return serialize(v, m);
@@ -618,9 +620,7 @@ std::string MetaType::Serialize(void* v, const MetaType * m, bool reOnly) const
 		{
 			return ToJson<void>(v, m);
 		}
-	}
-		
-			
+	}	
 }
 
 inline void MetaType::DeSerialize(void * v, rapidjson::Value & val, const MetaType * m, bool reOnly) const
@@ -628,15 +628,13 @@ inline void MetaType::DeSerialize(void * v, rapidjson::Value & val, const MetaTy
 	if (deserialize)
 		deserialize(v, val, m);
 	else
-		if (m != nullptr)
+		if (m != nullptr && m->Size() != 0)
 			FromJson(val, v, m, reOnly);
 		else
 			FromJson<void>(v, val, m);
 }
 
-std::string MetaType::ToJson(void* v, const MetaType* m, bool reOnly) { return m->ToJson(Variable(v, m), reOnly); }
-
-
+inline std::string MetaType::ToJson(void* v, const MetaType* m, bool reOnly) { return m->ToJson(Variable(v, m), reOnly); }
 
 DEFINE_META_PRIMITIVE(int);
 DEFINE_META_PRIMITIVE(std::string);
