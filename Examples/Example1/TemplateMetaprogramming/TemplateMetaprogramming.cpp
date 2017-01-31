@@ -88,14 +88,14 @@ int main()
 	Object* y = new Object(42);
 	
 	std::string json = Variable(x).ToJson();
-	//std::cout << json << std::endl;
+	std::cout << json << std::endl;
 
 	json = Variable(y).ToJson();
 	Variable(y).FromJson<Object>(json);
-	//std::cout << json << std::endl;
+	std::cout << json << std::endl;
 
 
-
+	std::cout << "Edit your json file" << std::endl;
 	std::cin.get();
 
 	FileMonitor::getInstance().MonitorFiles(6);
@@ -104,10 +104,10 @@ int main()
 	list;
 	
 	json = Variable(x).ToJson();
-	//std::cout << json << std::endl;
+	std::cout << json << std::endl;
 
 	json = Variable(y).ToJson();
-	//std::cout << json << std::endl;
+	std::cout << json << std::endl;
 
 	system("PAUSE");
 }
