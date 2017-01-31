@@ -84,29 +84,25 @@ DEFINE_META(Object)
 
 int main()
 {
-	Object* x = new Object();
-	Object* y = new Object(42);
+	Object x = Object();
+	Object y = Object(42);
 	
-	std::string json = Variable(x).ToJson();
+	std::string json = Variable(&x).ToJson();
 	std::cout << json << std::endl;
 
-	json = Variable(y).ToJson();
-	Variable(y).FromJson<Object>(json);
+	Variable(&y).FromJson<Object>(json);
 	std::cout << json << std::endl;
 
 
-	std::cout << "Edit your json file" << std::endl;
+	std::cout << "Edit your json file and press enter" << std::endl;
 	std::cin.get();
 
 	FileMonitor::getInstance().MonitorFiles(6);
-
-	auto& list = EntityList::get<Object>();
-	list;
 	
-	json = Variable(x).ToJson();
+	json = Variable(&x).ToJson();
 	std::cout << json << std::endl;
 
-	json = Variable(y).ToJson();
+	json = Variable(&y).ToJson();
 	std::cout << json << std::endl;
 
 	system("PAUSE");
