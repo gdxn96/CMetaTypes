@@ -11,6 +11,7 @@ using namespace std;
 
 int main()
 {
+	srand(0);
 	Game game(Size2D(1080, 1080), Size2D(1080, 1080));
 
 	if (!game.init()) {

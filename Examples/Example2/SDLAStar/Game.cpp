@@ -14,8 +14,7 @@ Game::Game(Size2D screenSize, Size2D worldSize) : m_camera(new Camera2D(Rect(0, 
 {
 	quit = false;
 	m_camera->setLevelSize(Size2D(worldSize.w, worldSize.h));
-	gameObjects.push_back(new SpinningBox(Rect(50, 50, 50, 50)));
-	gameObjects.push_back(new SpinningBox(Rect(50, 50, 50, 50)));
+	gameObjects.push_back(new SpinningBox(Rect(rand() % 400 + 400, rand() % 400 + 400, 50, 50)));
 
 	auto& list = EntityList::get<SpinningBox>();
 }

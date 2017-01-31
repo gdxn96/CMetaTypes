@@ -4,6 +4,7 @@
 DEFINE_META(Rect)
 {
 	ADD_RE_MEMBER(size);
+	ADD_RE_MEMBER(pos);
 }
 
 DEFINE_META(Colour)

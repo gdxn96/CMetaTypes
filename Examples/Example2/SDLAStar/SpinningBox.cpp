@@ -7,7 +7,6 @@ DEFINE_META(SpinningBox)
 	ADD_RE_MEMBER(angVel);
 	ADD_RE_MEMBER(col);
 	ADD_RE_MEMBER(rect);
-
 	LINK_TO_JSON(SpinningBox);
 }
 
